@@ -5,7 +5,7 @@ This repository is organized into subdirectories that contain the subsetted coho
 ## Directory Overview
 ---
 ### Subsetted Cohort Working Dataset
-The master analysis dataset is constructed in two stages:
+The master analysis dataset was constructed in two stages:
   1. `fitbit_data_processing`: cleaning and aggregation of Fitbit-derived metrics.
   2. `working_df`: integration of all additional data features onto the processed Fitbit dataset.
 
