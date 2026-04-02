@@ -17,15 +17,6 @@ Contains the notebook used to merge questionnaire data, microbiome features, met
 
 ---
 
-### `cohort_statistics_and_covariate_correlations`
-Summary statistics of the subsetted cohort and correlation analyses between covariates used across models.
-
-**Associated manuscript figures/data:**
-- Figure 2b
-- Figure S1
-
----
-
 ### `activity_sleep_happiness_questionnaire_alignment_with_fitbit`
 Analyses and visualizations comparing Fitbit-derived activity and sleep metrics with questionnaire-based measures, including Oxford Happiness Questionnaire (OHQ) alignment.
 
@@ -41,6 +32,15 @@ Random forest analyses used to quantify variance explained by different feature 
 - Figure 2a
 - Figure S2
 - Table S1
+
+---
+
+### `cohort_statistics_and_covariate_correlations`
+Summary statistics of the subsetted cohort and correlation analyses between covariates used across models.
+
+**Associated manuscript figures/data:**
+- Figure 2b
+- Figure S1
 
 ---
 
