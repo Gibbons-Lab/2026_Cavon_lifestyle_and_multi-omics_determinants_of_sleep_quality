@@ -1,0 +1,143 @@
+---
+title: "alpha_diversity_calcs_abx"
+author: "Crystal Perez"
+date: "2025-09-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+install.packages("knitr")
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("vegan")
+library(vegan)
+install.packages("ggplot2")
+library(ggplot2)
+install.packages("dplyr")
+library(dplyr)
+install.packages("tidyr")
+library(tidyr)
+```
+
+
+```{r read.in.data}
+# Specifying colClass so leading 0 is not dropped
+counts = read.csv("independent_feature_dataframes/crystal_arivale_16S_genera_counts_subsetted_for_sleep_merged_10_14_2025.csv",
+                  colClasses = c(public_client_id = "character"), row.names = 1)
+# Don't need the days_in_program column to match back to the rest of the large df in python because already substted down the public_client_id and
+# days_in_program rows that we need, so just need public_client_id to match back 
+counts <- counts %>% select(-any_of("days_in_program"))
+```
+Now we want to look at the counts/reads per person to see the range
+```{r check.counts.per.person}
+# This will check the number of counts per sample
+counts_per_person <- counts %>% pivot_longer(-public_client_id) %>% 
+  group_by(public_client_id) %>%                # Groups by person
+  summarise(total = sum(value)) %>%             # Sum counts/person
+  arrange(total)                                # Shows lowest counts first
+# Least num counts is 21557, max is 498642
+```
+Want to see number of features as a function of the counts
+```{r generate.data.to.plot.relationship}
+# Add clients as row names, drop that col
+rownames(counts) <- counts$public_client_id
+counts$public_client_id <- NULL
+# Count the number of features per row
+row_sums_non_zero <- rowSums(counts != 0)
+names(row_sums_non_zero) # This is ordered how I want
+# Order the tibble (sum of counts)
+ordered_tibble_asc <- counts_per_person %>%
+  arrange(public_client_id)
+data <- data.frame(x = ordered_tibble_asc$total, # Sum of counts
+                   y = row_sums_non_zero)        # Num of obs features
+```
+
+```{r check.if.log.fit.good}
+# Fit logarithmic curve using nls()
+log_fit <- nls(y ~ a + b * log(x), data = data, start = list(a = 0, b = 1))
+# Print the summary of the fit
+summary(log_fit)
+```
+
+```{r}
+# Generate predicted values for the curve
+curve_data <- data.frame(x = seq(min(data$x), max(data$x), length.out = 100))
+curve_data$y <- predict(log_fit, newdata = curve_data)
+```
+```{r}
+# Plot the data and the fitted curve
+ggplot(data, aes(x = x, y = y)) +
+  geom_point(color = "grey") +
+  geom_line(data = curve_data, aes(x = x, y = y), color = "red", linetype = "dashed") +
+  labs(title = "Fitted Logarithmic Curve",
+       x = "Sum of counts per person",
+       y = "Number of obs features")
+```
+## Repeat the same thing with Vegan package and see what we get
+```{r create.matrix}
+# Need to have it in matrix form for vegan
+counts_matrix <- as.matrix(counts)
+```
+
+```{r get.rarefied.richness}
+# Here S should be the same thing we calc above YAY
+S <- specnumber(counts_matrix)          # obs num of species = row_sums_non_zero
+raremax <- min(rowSums(counts_matrix))  # Gets min counts, also same as above
+# Get rarefied species count
+Srare <- rarefy(counts_matrix, raremax) # Num obs spec when rarefying
+plot(S, Srare, xlab = "Observed No. of Species", ylab = "Rarefied No. of Species")
+abline(0, 1)
+```
+Below the vertical line is = to raremax, or the min counts we set
+```{r}
+rarecurve(counts_matrix, step = 200, sample = raremax, col = "blue", cex = 0.6)
+```
+## Get other diversity estimates
+```{r generate.rarefied.matrix}
+set.seed(3)
+rarefied_counts <- rrarefy(counts_matrix, raremax)
+```
+### Shannon
+```{r shannon}
+H <- diversity(rarefied_counts)
+```
+### Berger-Parker
+```{r berger_parker}
+bp <- apply(rarefied_counts, 1, function(x) {
+  if(sum(x)==0) return(NA)
+  max(x) / sum(x)
+})
+```
+
+```{r alpha_diversity_merge, message=FALSE, warning=FALSE}
+
+# Combine alpha diversity metrics without using a metadata dataframe
+
+# Helper functions
+ids_of <- function(x) {
+  if (!is.null(names(x))) names(x)
+  else if (!is.null(rownames(x))) rownames(x)
+  else stop("No sample IDs found in names() or rownames().")
+}
+
+as_df <- function(x, value_col) {
+  data.frame(public_client_id = ids_of(x),
+             setNames(list(as.numeric(x)), value_col),
+             row.names = NULL)
+}
+
+# Convert each metric into a data frame
+obs_feats <- as_df(Srare, "observed_features")
+shannon   <- as_df(H, "shannon_index")
+bp_df     <- as_df(bp, "berger_parker")
+
+# Merge all metrics together by public_client_id
+alpha_meta <- Reduce(function(x, y) merge(x, y, by = "public_client_id", all = TRUE),
+                     list(obs_feats, shannon, bp_df))
+
+# Display the combined alpha diversity dataframe
+alpha_meta
+# Save to CSV
+# write.csv(alpha_meta, "independent_feature_dataframes/alpha_divs_rarefied_crystal_code_10_14_2025.csv", row.names = FALSE)
+write.csv(alpha_meta, "independent_feature_dataframes/alpha_divs_rarefied_crystal_code_01_29_2026.csv", row.names = FALSE)
+write.csv(rarefied_counts, "independent_feature_dataframes/rarefied_count_table_genera_crystal_code_01_28_2026.csv", row.names = TRUE)
+```
