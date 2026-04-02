@@ -1,6 +1,6 @@
 # Project Structure and Organization
 
-This repository is organized into subdirectories that contain the cohort dataset subsetting (generating the master working_df), analyses, intermediate outputs, and figure generation for this study. Each directory corresponds to a specific component of the project as described below.
+This repository is organized into subdirectories that contain the subsetted cohort dataset, analyses, intermediate outputs, and figure generation for this study. Each directory corresponds to a specific component of the project as described below.
 
 ## Directory Overview
 ---
