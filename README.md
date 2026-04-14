@@ -119,8 +119,8 @@ To reproduce the analyses, clone this repository and install the required Python
 We recommend using a virtual environment:
 
 ```bash
-git clone <repo_url>
-cd <repo_name>
+git clone https://github.com/Gibbons-Lab/2026_Cavon_lifestyle_and_multi-omic_determinants_of_sleep_quality.git
+cd 2026_Cavon_lifestyle_and_multi-omic_determinants_of_sleep_quality
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
